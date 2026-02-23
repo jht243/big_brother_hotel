@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voytel Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --secondary: #00e5ff;
+            --bg-color: #0d0a14;
+            --surface-color: #1a1525;
+            --text-color: #ffffff;
+            --muted-color: rgba(255, 255, 255, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--surface-color);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .header a {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .stat-card.highlight {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.2);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: var(--muted-color);
+            font-weight: 600;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .section-header {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-container {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: auto;
+            margin-bottom: 3rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            font-weight: 600;
+            color: var(--muted-color);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .badge.variant-a {
+            background: #00e5ff;
+        }
+
+        .badge.variant-b {
+            background: #ff007f;
+            color: white;
+        }
+
+        .badge.variant-c {
+            background: #ffea00;
+        }
+
+        .badge.default {
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Voytel Analytics Dashboard</h1>
+        <a href="/">← View Landing Page</a>
+    </div>
+
+    <div class="container">
+        <button class="btn" onclick="fetchDashboardData()">Refresh Data</button>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Dynamic stats will load here -->
+        </div>
+
+        <div class="section-header">
+            <h2>Recent Waitlist Signups</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>A/B Variant Seen</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody">
+                    <tr>
+                        <td colspan="4">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-header">
+            <h2>Recent Page Views</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>IP Address</th>
+                        <th>Source / Referrer</th>
+                        <th>Campaign</th>
+                        <th>Page URL</th>
+                    </tr>
+                </thead>
+                <tbody id="viewsTableBody">
+                    <tr>
+                        <td colspan="5">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString();
+        }
+
+        function getVariantShortName(variant) {
+            if (!variant) return 'N/A';
+            if (variant.includes('Stay for Free')) return 'A (Stay Free)';
+            if (variant.includes('Your Life.')) return 'B (Streamed)';
+            if (variant.includes('Zero Rent')) return 'C (Zero Rent)';
+            return variant;
+        }
+
+        function getVariantBadgeClass(variant) {
+            if (!variant) return 'badge default';
+            if (variant.includes('Stay for Free')) return 'badge variant-a';
+            if (variant.includes('Your Life.')) return 'badge variant-b';
+            if (variant.includes('Zero Rent')) return 'badge variant-c';
+            return 'badge default';
+        }
+
+        async function fetchDashboardData() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+
+                // Populate Stats Grid
+                const statsGrid = document.getElementById('statsGrid');
+                let statsHtml = `
+                    <div class="stat-card highlight">
+                        <h3>Total Signups</h3>
+                        <p class="value">${data.totalLeads}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Page Views</h3>
+                        <p class="value">${data.totalPageViews}</p>
+                    </div>
+                `;
+
+                // Add A/B Variant stats
+                if (data.totalLeads > 0) {
+                    for (const [variant, count] of Object.entries(data.variants)) {
+                        const percent = Math.round((count / data.totalLeads) * 100);
+                        statsHtml += `
+                            <div class="stat-card">
+                                <h3>Variant: ${getVariantShortName(variant)}</h3>
+                                <p class="value">${count} <span style="font-size:1rem;font-weight:normal;color:var(--muted-color)">(${percent}%)</span></p>
+                            </div>
+                        `;
+                    }
+                }
+                statsGrid.innerHTML = statsHtml;
+
+                // Populate Leads Table
+                const leadsTbody = document.getElementById('leadsTableBody');
+                if (data.recentLeads.length === 0) {
+                    leadsTbody.innerHTML = '<tr><td colspan="4">No signups yet.</td></tr>';
+                } else {
+                    leadsTbody.innerHTML = data.recentLeads.map(lead => `
+                        <tr>
+                            <td>${formatDate(lead.created_at)}</td>
+                            <td>${lead.name}</td>
+                            <td>${lead.email}</td>
+                            <td><span class="${getVariantBadgeClass(lead.ab_variant)}">${getVariantShortName(lead.ab_variant)}</span></td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Populate Views Table
+                const viewsTbody = document.getElementById('viewsTableBody');
+                if (data.recentPageViews.length === 0) {
+                    viewsTbody.innerHTML = '<tr><td colspan="5">No page views yet.</td></tr>';
+                } else {
+                    viewsTbody.innerHTML = data.recentPageViews.map(view => {
+                        const source = view.utm_source ? `${view.utm_source} / ${view.utm_medium}` : (view.referrer || 'Direct');
+                        return `
+                        <tr>
+                            <td>${formatDate(view.created_at)}</td>
+                            <td>${view.ip_address || 'Unknown'}</td>
+                            <td>${source}</td>
+                            <td>${view.utm_campaign || '-'}</td>
+                            <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${view.page_url}</td>
+                        </tr>
+                        `;
+                    }).join('');
+                }
+
+            } catch (err) {
+                console.error('Error fetching dashboard data:', err);
+                alert('Failed to reload dashboard data.');
+            }
+        }
+
+        // Load initially
+        fetchDashboardData();
+    </script>
+</body>
+
+</html>
